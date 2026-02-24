@@ -3,7 +3,6 @@ const socket = io();
 let my = { roomId: null, seat: null, ready: false };
 let latestRoom = null;
 let latestGame = null;
-let lastAutoDrawKey = null;
 
 const $ = (id) => document.getElementById(id);
 const status = (msg) => { $("status").textContent = msg; };
@@ -41,28 +40,6 @@ function relativeSeat(target) {
   if (delta === 1) return "right";
   if (delta === 2) return "top";
   return "left";
-}
-
-
-function isMyTurnNeedDraw(g) {
-  if (!g || my.seat == null) return false;
-  if (g.stage !== "PLAYING" || g.turnSeat !== my.seat || g.currentDiscard) return false;
-  const me = g.hands.find((x) => x.seat === my.seat);
-  if (!me?.tiles) return false;
-  return me.tiles.length % 3 === 1;
-}
-
-function maybeAutoDraw() {
-  const g = latestGame;
-  if (!my.roomId || !isMyTurnNeedDraw(g)) {
-    lastAutoDrawKey = null;
-    return;
-  }
-  const me = g.hands.find((x) => x.seat === my.seat);
-  const key = `${g.stage}|${g.turnSeat}|${g.wallCount}|${me.tiles.length}|${g.currentDiscard ? 1 : 0}`;
-  if (lastAutoDrawKey === key) return;
-  lastAutoDrawKey = key;
-  socket.emit("draw", { roomId: my.roomId });
 }
 
 $("btnCreate").onclick = () => {
@@ -146,7 +123,6 @@ socket.on("room_state", (room) => {
   latestRoom = room;
   renderRoom();
   renderSeats();
-  renderDiscards();
 });
 
 socket.on("game_state", (g) => {
@@ -154,9 +130,7 @@ socket.on("game_state", (g) => {
   renderGame();
   renderHand();
   renderSeats();
-  renderDiscards();
   updateActionAvailability();
-  maybeAutoDraw();
 });
 
 socket.on("error_msg", ({ message }) => status("错误：" + message));
@@ -251,33 +225,6 @@ function renderGame() {
   $("resultView").textContent = lines.join("\n");
 }
 
-
-
-function renderDiscards() {
-  const zones = {
-    top: $("discardTop"),
-    left: $("discardLeft"),
-    right: $("discardRight"),
-    bottom: $("discardBottom")
-  };
-
-  Object.entries(zones).forEach(([, el]) => {
-    el.innerHTML = '<div class="discard-title">弃牌</div><div class="discard-tiles empty">暂无</div>';
-  });
-
-  if (!latestGame || !latestRoom || my.seat == null) return;
-
-  for (const d of latestGame.discards || []) {
-    const pos = relativeSeat(d.seat);
-    if (!pos || !zones[pos]) continue;
-    const title = `${seatNameFromMine(d.seat)}（${playerDisplay(d.seat)}）弃牌`;
-    const tilesHtml = d.tiles.length
-      ? d.tiles.map((t) => `<span class="discard-tile">${tileToZh(t)}</span>`).join("")
-      : '<span class="discard-tiles empty">暂无</span>';
-    zones[pos].innerHTML = `<div class="discard-title">${title}</div><div class="discard-tiles">${tilesHtml}</div>`;
-  }
-}
-
 function renderHand() {
   const handWrap = $("myHand");
   handWrap.innerHTML = "";
@@ -285,12 +232,9 @@ function renderHand() {
   const me = latestGame.hands.find((x) => x.seat === my.seat);
   if (!me?.tiles) return;
 
-  let highlighted = false;
   for (const tile of me.tiles) {
     const btn = document.createElement("button");
-    const isLastDrawn = latestGame.lastDrawnTile && !highlighted && tile === latestGame.lastDrawnTile;
-    if (isLastDrawn) highlighted = true;
-    btn.className = `tile-btn${isLastDrawn ? " last-drawn" : ""}`;
+    btn.className = "tile-btn";
     btn.type = "button";
     btn.innerHTML = `<span class="tile-zh">${tileToZh(tile)}</span><span class="tile-code">${tile}</span>`;
     btn.onclick = () => {
@@ -321,7 +265,7 @@ function updateActionAvailability() {
   $("btnPreDragon").disabled = !(inGame && isPre);
   $("btnPreDone").disabled = !(inGame && isPre);
 
-  $("btnDraw").disabled = !(inRoom && isMyTurnNeedDraw(g));
+  $("btnDraw").disabled = !(inRoom && myTurn && !hasDiscard);
   $("btnRiichi").disabled = !(inRoom && myTurn && !hasDiscard);
   $("btnKong").disabled = !(inRoom && myTurn && !hasDiscard);
   $("btnWin").disabled = !(inRoom && isPlaying && ((myTurn && !hasDiscard) || canRespond));
@@ -338,4 +282,3 @@ updateActionAvailability();
 renderGame();
 renderHand();
 renderSeats();
-renderDiscards();
