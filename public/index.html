@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="zh">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>庄河麻将（联机房间）</title>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+  <div class="wrap">
+    <h1>庄河麻将（MVP）</h1>
+
+    <div class="card">
+      <div class="row">
+        <input id="name" placeholder="你的名字" />
+        <button id="btnCreate">创建房间</button>
+      </div>
+      <div class="row">
+        <input id="roomId" placeholder="输入6位房间码" />
+        <button id="btnJoin">加入房间</button>
+      </div>
+      <div id="status" class="status"></div>
+    </div>
+
+    <div class="card">
+      <h2>房间</h2>
+      <div id="roomView">未加入</div>
+      <div class="row">
+        <button id="btnReady">准备/取消准备</button>
+        <button id="btnStart">开始游戏（房主）</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>牌局</h2>
+      <div id="gameView">未开始</div>
+
+      <div class="actions">
+        <button id="btnPreWind">开局亮风杠（东南西北，B1补）</button>
+        <button id="btnPreDragon">开局亮箭杠（中发白，B1补）</button>
+        <button id="btnPreDone">亮杠结束/进入抓牌</button>
+      </div>
+
+      <div class="actions">
+        <button id="btnDraw">摸牌</button>
+        <button id="btnRiichi">打宝牌/立直（会让你选择弃哪张）</button>
+        <button id="btnKong">开杠（MVP：只能自己手里四张开）</button>
+        <button id="btnWin">胡牌（自摸或点炮）</button>
+        <button id="btnPass">PASS（放弃吃碰杠胡）</button>
+      </div>
+
+      <div class="row">
+        <input id="tileInput" placeholder="出牌/操作牌，例如 W3 / T9 / B1 / E / Wh" />
+        <button id="btnDiscard">出牌</button>
+      </div>
+
+      <div class="row">
+        <button id="btnNewRound">新一局（房主）</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="client.js"></script>
+</body>
+</html>
