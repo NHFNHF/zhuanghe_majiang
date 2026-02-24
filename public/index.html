@@ -28,35 +28,48 @@
       <div class="row">
         <button id="btnReady">准备/取消准备</button>
         <button id="btnStart">开始游戏（房主）</button>
+        <button id="btnNewRound">新一局（房主）</button>
       </div>
     </div>
 
-    <div class="card">
-      <h2>牌局</h2>
-      <div id="gameView">未开始</div>
+    <div class="card table-card">
+      <div class="table-meta" id="tableMeta">未开始</div>
+
+      <div class="table-layout">
+        <div class="seat seat-top" id="seatTop"></div>
+        <div class="seat seat-left" id="seatLeft"></div>
+        <div class="seat seat-right" id="seatRight"></div>
+        <div class="seat seat-bottom" id="seatBottom"></div>
+        <div class="table-center" id="tableCenter"></div>
+      </div>
+
+      <div class="discard-board">
+        <div class="discard-zone" id="discardTop"></div>
+        <div class="discard-zone" id="discardLeft"></div>
+        <div class="discard-zone" id="discardRight"></div>
+        <div class="discard-zone" id="discardBottom"></div>
+      </div>
+
+      <div>
+        <h3>我的手牌（点击直接出牌）</h3>
+        <div id="myHand" class="hand"></div>
+      </div>
 
       <div class="actions">
-        <button id="btnPreWind">开局亮风杠（东南西北，B1补）</button>
-        <button id="btnPreDragon">开局亮箭杠（中发白，B1补）</button>
-        <button id="btnPreDone">亮杠结束/进入抓牌</button>
+        <button id="btnPreWind">开局亮风杠</button>
+        <button id="btnPreDragon">开局亮箭杠</button>
+        <button id="btnPreDone">亮杠结束</button>
       </div>
 
       <div class="actions">
         <button id="btnDraw">摸牌</button>
-        <button id="btnRiichi">打宝牌/立直（会让你选择弃哪张）</button>
-        <button id="btnKong">开杠（MVP：只能自己手里四张开）</button>
-        <button id="btnWin">胡牌（自摸或点炮）</button>
-        <button id="btnPass">PASS（放弃吃碰杠胡）</button>
+        <button id="btnRiichi">立直</button>
+        <button id="btnKong">杠</button>
+        <button id="btnWin">胡</button>
+        <button id="btnPass">PASS</button>
       </div>
 
-      <div class="row">
-        <input id="tileInput" placeholder="出牌/操作牌，例如 W3 / T9 / B1 / E / Wh" />
-        <button id="btnDiscard">出牌</button>
-      </div>
-
-      <div class="row">
-        <button id="btnNewRound">新一局（房主）</button>
-      </div>
+      <div id="resultView" class="result"></div>
     </div>
   </div>
 

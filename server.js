@@ -175,6 +175,7 @@ function newGameState(room) {
     pendingKongs: [], // { seat, type:'ming'|'an', moneyEach, reason, atTurn }
     // 统计摸宝/摸鸡
     bonusFan: Array(4).fill(0),
+    lastDrawnTile: Array(4).fill(null),
     // 游戏结束信息
     result: null
   };
@@ -234,7 +235,7 @@ function publicGameStateForSeat(room, seat) {
     dice: g.dice,
     wallCount: wallCount(g),
     hands: handsInfo,
-    melds: g.melds.map((m, idx)=>({ seat: idx, melds: m.map(meldToPublic)})),
+    melds: g.melds.map((m, idx)=>({ seat: idx, melds: m.map(mm => meldToPublic(mm, you, idx)) })),
     discards: g.discards.map((d, idx)=>({ seat: idx, tiles: d.map(idToName) })),
     currentDiscard: g.currentDiscard ? { seat: g.currentDiscard.seat, tile: idToName(g.currentDiscard.tileId) } : null,
     riichi: g.riichi.map((r, idx)=>({
@@ -258,6 +259,7 @@ function publicGameStateForSeat(room, seat) {
       tiles: pk.active ? pk.tiles.map(idToName) : []
     })),
     bonusFan: (idx)=>g.bonusFan[idx], // 客户端不用
+    lastDrawnTile: g.lastDrawnTile[you] != null ? idToName(g.lastDrawnTile[you]) : null,
     result: g.result
   };
 }
@@ -275,12 +277,15 @@ function emitGame(room) {
 function idToName(id) { return TILE_NAMES[id] ?? String(id); }
 function nameToId(name) { return NAME_TO_ID.get(name); }
 
-function meldToPublic(m) {
+function meldToPublic(m, viewerSeat, ownerSeat) {
   // meld: { type, tiles:[id...], fromSeat?, claimedTile? }
+  const isConcealedKong = m.type === "ankong";
+  const canSeeTiles = !isConcealedKong || viewerSeat === ownerSeat;
   return {
     type: m.type,
-    tiles: m.tiles.map(idToName),
-    fromSeat: m.fromSeat ?? null
+    tiles: canSeeTiles ? m.tiles.map(idToName) : ["■■","■■","■■","■■"],
+    fromSeat: m.fromSeat ?? null,
+    concealed: isConcealedKong && viewerSeat !== ownerSeat
   };
 }
 
@@ -421,6 +426,7 @@ function doDraw(room, seat) {
       return;
     }
     g.hands[seat].push(a, b);
+    g.lastDrawnTile[seat] = b;
     afterDrawBonus(g, seat, a);
     afterDrawBonus(g, seat, b);
     sortHand(g.hands[seat]);
@@ -433,6 +439,7 @@ function doDraw(room, seat) {
     return;
   }
   g.hands[seat].push(t);
+  g.lastDrawnTile[seat] = t;
   afterDrawBonus(g, seat, t);
   sortHand(g.hands[seat]);
 }
@@ -480,6 +487,7 @@ function doDiscard(room, seat, tileName) {
   // 如果已经立直且 locked=true，不能随便改出牌（MVP：locked后只能自动打最后摸到的牌太复杂，这里允许出，但不允许吃碰改变手）
   // 你规则是“打过宝牌后手牌不可变动，也不能吃碰”，对自己而言出牌是允许的（每回合必须出）
   hand.splice(idx, 1);
+  g.lastDrawnTile[seat] = null;
   sortHand(hand);
 
   g.currentDiscard = { seat, tileId };
@@ -620,6 +628,7 @@ function doKong(room, seat, payload) {
     const t = drawFront(g);
     if (t == null) { handleDrawEndAsDrawnGame(room); return; }
     g.hands[seat].push(t);
+    g.lastDrawnTile[seat] = t;
     afterDrawBonus(g, seat, t);
     sortHand(g.hands[seat]);
     return;
@@ -642,6 +651,7 @@ function doKong(room, seat, payload) {
     const t = drawFront(g);
     if (t == null) { handleDrawEndAsDrawnGame(room); return; }
     g.hands[seat].push(t);
+    g.lastDrawnTile[seat] = t;
     afterDrawBonus(g, seat, t);
     sortHand(g.hands[seat]);
     return;
